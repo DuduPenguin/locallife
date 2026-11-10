@@ -4,7 +4,7 @@
 
 ### 1. 秒杀下单，记下返回的 orderId
 POST {{host}}/voucher-order/seckill/2
-authorization: 你的token
+authorization: 663ff5a50e334260b03b6b4961dfb126
 
 ### 2. 查询对账（应该 allOk = true）
 GET {{host}}/voucher-order/reconcile
