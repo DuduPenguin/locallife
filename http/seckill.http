@@ -14,7 +14,7 @@ authorization: 你的token
 
 ### 2. 【新方案】Lua + MQ 下单（压测用这个不超卖）
 POST {{host}}/voucher-order/seckill/2
-authorization: 7b2904e2986f4dbebf8650c40fe93d08
+authorization: 你的token
 
 ### 3. 单次验证：连点两次第 2 个请求，第二次应该返回「每人限购一单」
 POST {{host}}/voucher-order/seckill/2

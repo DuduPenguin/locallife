@@ -22,4 +22,17 @@ public interface VoucherOrderMapper extends BaseMapper<VoucherOrder> {
      */
     @Update("UPDATE tb_voucher_order SET status = 4 WHERE id = #{orderId} AND status = 1")
     int cancelIfPending(@Param("orderId") Long orderId);
+
+    /**
+     * 状态机支付：只有"待支付(1)"能改成"已支付(2)"。
+     *
+     * <p>重复支付返回 0 行，不会把已取消的订单改成已支付。
+     */
+    @Update("UPDATE tb_voucher_order SET status = 2, pay_time = NOW() " +
+            "WHERE id = #{orderId} AND status = 1")
+    int payIfPending(@Param("orderId") Long orderId);
+
+    /** 该券的有效订单数（待支付 + 已支付 + 已核销），对账用。 */
+    @Select("SELECT COUNT(*) FROM tb_voucher_order WHERE voucher_id = #{voucherId} AND status IN (1, 2, 3)")
+    int countValidByVoucher(@Param("voucherId") Long voucherId);
 }

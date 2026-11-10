@@ -40,6 +40,8 @@ public final class RedisConstants {
     public static final String SECKILL_ORDER_KEY = "seckill:order:";
     /** 活动时间窗：seckill:time:{voucherId}，value = "beginEpoch:endEpoch" */
     public static final String SECKILL_TIME_KEY = "seckill:time:";
+    /** 初始库存：seckill:init:{voucherId}，对账的基准值 */
+    public static final String SECKILL_INIT_KEY = "seckill:init:";
 
     /* ============ 订单（M5） ============ */
     /** 用户下单锁：lock:order:{userId} */

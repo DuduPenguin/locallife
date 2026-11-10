@@ -46,6 +46,10 @@ public class StockPreheatRunner implements CommandLineRunner {
 
             // 清空上一轮的已购集合（重新压测时必须清，否则会被判"重复下单"）
             stringRedisTemplate.delete(RedisConstants.SECKILL_ORDER_KEY + "{" + id + "}");
+
+            // 记录初始库存，作为对账的基准值（dbStock + dbSold == init）
+            stringRedisTemplate.opsForValue()
+                    .set(RedisConstants.SECKILL_INIT_KEY + id, String.valueOf(v.getStock()));
         }
         log.info("秒杀预热完成，共 {} 张券: {}", list.size(),
                 list.stream().map(v -> v.getVoucherId() + "=" + v.getStock()).toList());
