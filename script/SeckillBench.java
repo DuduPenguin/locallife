@@ -39,10 +39,28 @@ public class SeckillBench {
 
         System.out.printf("target : %s%nthreads: %d%n%n", url, threads);
 
+        // 不要给 HttpClient 单独开线程池：默认就是轻量的，
+        // 再开 threads 个线程只会让本机线程数翻倍，压出来的数字失真
         HttpClient client = HttpClient.newBuilder()
-                .executor(Executors.newFixedThreadPool(threads))
                 .connectTimeout(java.time.Duration.ofSeconds(5))
                 .build();
+
+        // 预热：先串行打 20 次（用不存在的券 id 999，不会消耗真实库存），
+        // 让 JIT、连接池、Tomcat 线程都热起来，避免冷启动污染 P95
+        String warmupUrl = HOST + ("lua".equalsIgnoreCase(mode)
+                ? "/voucher-order/seckill/999"
+                : "/voucher-order/seckill-sync/999");
+        for (int i = 0; i < 20; i++) {
+            try {
+                HttpRequest req = HttpRequest.newBuilder(URI.create(warmupUrl))
+                        .header("authorization", "bench_" + (USER_START + i))
+                        .POST(HttpRequest.BodyPublishers.noBody()).build();
+                client.send(req, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception ignored) {
+            }
+        }
+        System.out.println("warmup done (20 requests)");
+
 
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(threads);
@@ -94,6 +112,7 @@ public class SeckillBench {
         if (!costs.isEmpty()) {
             System.out.printf("P50         : %d ms%n", costs.get(costs.size() / 2));
             System.out.printf("P95         : %d ms%n", costs.get((int) (costs.size() * 0.95)));
+            System.out.printf("P99         : %d ms%n", costs.get(Math.min(costs.size() - 1, (int) (costs.size() * 0.99))));
             System.out.printf("max         : %d ms%n", costs.get(costs.size() - 1));
         }
         System.out.println("=======================================");
