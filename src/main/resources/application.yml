@@ -7,7 +7,7 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/locallife?serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    url: jdbc:mysql://localhost:3306/locallife?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
     username: root
     password: 123456
     hikari:
@@ -17,9 +17,10 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
-      database: 0
+      # 用 1 号库：与其它项目（默认 0 号库）隔离，避免 key 混在一起
+      database: 1
       timeout: 3000ms
       lettuce:
         pool:
@@ -64,3 +65,4 @@ logging:
   level:
     root: info
     com.gao.locallife: debug
+

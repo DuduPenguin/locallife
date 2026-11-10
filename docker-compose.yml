@@ -1,10 +1,20 @@
+# ============================================================================
+# 用途：给"没装中间件"的人一键起环境。
+#
+# 如果你本机已经装了 MySQL(3306) / Redis(6379) / RabbitMQ(5672)，
+# 请不要执行 `docker compose up`，会报 port is already allocated。
+# 直接改 application.yml 连本机服务即可，本文件保留给别人 clone 时用。
+#
+# 只想补某一个（比如本机没 RabbitMQ）：
+#   docker compose up -d rabbitmq
+# ============================================================================
 services:
   mysql:
     image: mysql:8.0
     container_name: ll-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: locallife
       TZ: Asia/Shanghai
     command:
@@ -14,7 +24,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      # 首次启动会自动执行 sql/ 下的建表脚本
+      # 首次启动会自动执行 sql/ 下的建表脚本（M1 放进去）
       - ./sql:/docker-entrypoint-initdb.d
       - ll-mysql-data:/var/lib/mysql
 
