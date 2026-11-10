@@ -1,13 +1,16 @@
 ### M5 订单生命周期：支付 / 取消 / 对账
+###
+### ⚠️ /voucher-order/** 不在白名单，所有请求都要带 authorization
 
 @host = http://localhost:8080
 
 ### 1. 秒杀下单，记下返回的 orderId
 POST {{host}}/voucher-order/seckill/2
-authorization: 663ff5a50e334260b03b6b4961dfb126
+authorization: 你的token
 
 ### 2. 查询对账（应该 allOk = true）
 GET {{host}}/voucher-order/reconcile
+authorization: 你的token
 
 ### 3. 模拟支付（把上一步的 orderId 填进来）
 POST {{host}}/voucher-order/pay/把orderId填这里
@@ -17,13 +20,14 @@ authorization: 你的token
 POST {{host}}/voucher-order/pay/把orderId填这里
 authorization: 你的token
 
-### 5. 取消订单（把 orderId 换成一张待支付的新订单）
+### 5. 取消订单（换成一张新的待支付订单的 orderId）
 ###    期望：DB 库存 +1、Redis 库存 +1、已购集合移除该用户
 POST {{host}}/voucher-order/cancel/把orderId填这里
 authorization: 你的token
 
 ### 6. 取消后再对账（仍应 allOk = true）
 GET {{host}}/voucher-order/reconcile
+authorization: 你的token
 
 ### ---------------------------------------------------------------
 ### 超时取消怎么验证（30 分钟太久，用下面这条临时改成 30 秒）：
