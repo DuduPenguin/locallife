@@ -8,8 +8,10 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/locallife?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
-    username: root
-    password: root
+    # 密码不写死：环境变量优先，没设就用本地默认值
+    #   PowerShell 临时改：$env:MYSQL_PASSWORD="xxx"
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:123456}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -31,10 +33,10 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: guest
-    password: guest
+    username: ${RABBIT_USER:itheima}
+    password: ${RABBIT_PASSWORD:123321}
     virtual-host: /
-    # 消费端手动 ACK（M4 用）
+    # 消费端手动 ACK（M4-B 用）
     listener:
       simple:
         acknowledge-mode: manual
@@ -65,4 +67,3 @@ logging:
   level:
     root: info
     com.gao.locallife: debug
-

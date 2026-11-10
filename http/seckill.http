@@ -5,7 +5,7 @@
 
 ### 1. 同步版下单（单次请求应该成功）
 POST {{host}}/voucher-order/seckill-sync/2
-authorization: 粘你的token
+authorization: fc1aba1aebd043a9bf6f67805cf5252d
 
 ### 2. 再点一次（应该返回「每人限购一单」）
 POST {{host}}/voucher-order/seckill-sync/2

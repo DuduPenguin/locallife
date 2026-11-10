@@ -12,12 +12,12 @@ Content-Type: application/json
 
 {
   "phone": "13800000001",
-  "code": "123456"
+  "code": "725888"
 }
 
 ### 3. 当前用户（先登录，把 token 粘到下面）
 GET {{host}}/user/me
-authorization: 把token粘到这里
+authorization: fc1aba1aebd043a9bf6f67805cf5252d
 
 ### 4. 不带 token 访问，应该返回 401
 GET {{host}}/user/me
