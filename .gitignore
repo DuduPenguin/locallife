@@ -27,3 +27,7 @@ Thumbs.db
 
 ### Local config ###
 application-local.yml
+
+### IDEA HTTP Client 的环境变量文件（含真实 token，不要提交） ###
+http-client.env.json
+http-client.private.env.json

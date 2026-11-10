@@ -106,13 +106,13 @@ GEO 距离排序（一个商圈只有 1 家店）和 RAG 检索评测（知识�
 | 来源 | 哈尔滨市商务局 2024-02 发布的[美食地图](https://www.hrbtv.net/folder137/2024-02-15/877233.html)（4 个主城区、50+ 家餐饮门店） |
 | 真实字段 | 店名、门牌地址、所属城区/商圈 |
 | 估算字段 | 营业时间、人均、评分、经纬度（演示用，不代表真实经营数据） |
-| 规模 | 70 家商户 / 31 张券（3 张秒杀）/ 120 条笔记 |
-| 生成器 | [	ools/gen_seed.py](tools/gen_seed.py)，固定随机种子，结果可复现 |
+| 规模 | **80 家商户**（10 家初始 + 70 家新增）/ 34 张券（3 张秒杀）/ 124 条笔记 |
+| 生成器 | [tools/gen_seed.py](tools/gen_seed.py)，固定随机种子，结果可复现 |
 
-`ash
+```bash
 python tools/gen_seed.py
 mysql ... locallife --default-character-set=utf8mb4 < sql/seed_shops.sql
-`
+```
 
 > 为什么不用爬虫抓点评/美团：有反爬和合规风险。
 > 用公开的政府发布名单 + 自己估算经营数据，既真实又不越界 —— 面试被问「数据哪来的」能直接答。
@@ -120,19 +120,42 @@ mysql ... locallife --default-character-set=utf8mb4 < sql/seed_shops.sql
 ## 目录结构
 
 ```
-src/main/java/com/gao/locallife
-├── LocallifeApplication.java
-├── common/          统一返回、异常、ThreadLocal、Key 常量
-├── config/          MyBatis-Plus 等配置
-├── controller/      HTTP 入口
-├── dto / vo / entity
-├── mapper           数据访问
-├── service/impl     业务
-├── interceptor      登录拦截器（M2）
-├── cache            缓存组件（M3）
-├── mq               消息生产/消费（M4）
-├── id               订单号生成（M5）
-└── task             定时对账（M5）
+locallife
+├── pom.xml
+├── docker-compose.yml          可选：一键起 MySQL / Redis / RabbitMQ
+├── sql/
+│   ├── init.sql                9 张表 + 初始数据
+│   ├── seed_shops.sql          80 家商户（生成，可重复执行）
+│   ├── reset.sql               重置秒杀库存与订单
+│   └── verify.sql              建表结果校验
+├── tools/
+│   └── gen_seed.py             种子数据生成器（固定随机种子，结果可复现）
+├── script/
+│   ├── prepare_tokens.ps1      压测前准备 300 个虚拟用户登录态
+│   ├── SeckillBench.java       压测器（JDK 单文件运行，无依赖）
+│   └── README.md
+├── http/
+│   ├── user.http               登录相关请求
+│   ├── shop.http               缓存与附近商户
+│   ├── seckill.http            秒杀两版对比
+│   ├── order.http              支付 / 取消 / 对账
+│   └── social.http             点赞 / 关注 / Feed / 签到
+├── docs/
+│   └── architecture.md         架构图、表设计、6 个技术决策、订单生命周期、压测方法
+└── src/main/java/com/gao/locallife
+    ├── LocallifeApplication.java
+    ├── common/        统一返回、业务异常、ThreadLocal、Redis key 常量、秒杀返回码
+    ├── config/        分页插件、拦截器注册、RabbitMQ 拓扑、订单延迟队列
+    ├── controller/    用户 / 商户 / 秒杀订单 / 笔记 / 关注 / 签到 / 健康检查
+    ├── dto/           登录表单、用户、Feed 分页结果
+    ├── entity/        9 张表对应实体
+    ├── interceptor/   双层登录拦截器（识别用户 + 强制登录）
+    ├── cache/         缓存组件 CacheClient（穿透 / 互斥锁 / 逻辑过期）
+    ├── mq/            秒杀消息生产与消费、订单超时取消（手动 ACK + 死信）
+    ├── mapper/        数据访问（BaseMapper + 注解 SQL）
+    ├── service/impl/  业务实现
+    ├── id/            订单号生成器（时间戳 + 日序列）
+    └── task/          缓存预热、GEO 预热、库存预热、定时对账
 ```
 
 ## 约定
