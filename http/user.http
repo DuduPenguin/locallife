@@ -1,0 +1,30 @@
+### IDEA HTTP Client：点绿色箭头直接发请求
+### 文件位置：项目根目录 http/user.http
+
+@host = http://localhost:8080
+
+### 1. 发验证码（开发期会把 code 返回在 data 里）
+POST {{host}}/user/code?phone=13800000001
+
+### 2. 登录（把上一步的 code 填进来）
+POST {{host}}/user/login
+Content-Type: application/json
+
+{
+  "phone": "13800000001",
+  "code": "123456"
+}
+
+### 3. 当前用户（先登录，把 token 粘到下面）
+GET {{host}}/user/me
+authorization: 把token粘到这里
+
+### 4. 不带 token 访问，应该返回 401
+GET {{host}}/user/me
+
+### 5. 登出
+POST {{host}}/user/logout
+authorization: 把token粘到这里
+
+### 6. 健康检查
+GET {{host}}/health
