@@ -1,0 +1,16 @@
+### M4-A 秒杀（同步版，故意会超卖）
+### 需要先登录拿 token
+
+@host = http://localhost:8080
+
+### 1. 同步版下单（单次请求应该成功）
+POST {{host}}/voucher-order/seckill-sync/2
+authorization: 粘你的token
+
+### 2. 再点一次（应该返回「每人限购一单」）
+POST {{host}}/voucher-order/seckill-sync/2
+authorization: 粘你的token
+
+### 3. 看库存和订单数（用 SQL，不在这个文件里）
+###    SELECT stock FROM tb_seckill_voucher WHERE voucher_id = 2;
+###    SELECT COUNT(*) FROM tb_voucher_order WHERE voucher_id = 2;
