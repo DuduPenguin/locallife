@@ -47,8 +47,15 @@ public class FollowServiceImpl implements FollowService {
         Follow follow = new Follow();
         follow.setUserId(userId);
         follow.setFollowUserId(followUserId);
-        followMapper.insert(follow);      // uk_user_follow 兜底防重
+        try {
+            followMapper.insert(follow);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 唯一索引冲突 = 关系已经存在（初始化数据 / 并发重复提交）
+            // 这里不能报错，要当成"已关注"，并继续把 Redis 补齐（自愈）
+            log.debug("关注关系已存在，补写 Redis userId={} followUserId={}", userId, followUserId);
+        }
 
+        // 不管 DB 是否新插入，都把 Redis 写一遍，保证两边最终一致
         stringRedisTemplate.opsForSet()
                 .add(RedisConstants.FOLLOW_KEY + userId, String.valueOf(followUserId));
         stringRedisTemplate.opsForSet()

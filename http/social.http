@@ -1,7 +1,7 @@
 ### M6 社交 + M7 地理（全部需要登录，先填 token）
 
 @host = http://localhost:8080
-@token = 你的token
+@token = ef9c0c0d00ff4e228423e4c59b00796e
 @blogId = 1
 
 ### ============ M7 地理 GEO ============
