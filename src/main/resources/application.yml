@@ -1,0 +1,66 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: locallife
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/locallife?serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: root
+    password: 123456
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: itheima
+    password: 123321
+    virtual-host: /
+    # 消费端手动 ACK（M4 用）
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1
+        concurrency: 1
+        max-concurrency: 4
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+
+mybatis-plus:
+  # 全局表前缀：实体 User -> tb_user，省掉每个类写 @TableName
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      table-prefix: tb_
+  configuration:
+    map-underscore-to-camel-case: true
+    # 开发期打印 SQL，M8 上线前改成 NoLoggingImpl
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.gao.locallife.entity
+
+logging:
+  level:
+    root: info
+    com.gao.locallife: debug
