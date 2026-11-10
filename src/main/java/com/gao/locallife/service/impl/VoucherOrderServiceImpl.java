@@ -153,7 +153,8 @@ public class VoucherOrderServiceImpl implements VoucherOrderService {
         order.setPayValue(1000L);
         order.setActualValue(5000L);
         order.setStatus(1);
-        // 唯一索引 uk_user_voucher 在这兜底，冲突抛 DuplicateKeyException
+        order.setActiveFlag(1);
+        // 唯一索引 uk_user_voucher_active 在这兜底，冲突抛 DuplicateKeyException
         voucherOrderMapper.insert(order);
 
         // 落库成功才开始计时：30 分钟未支付 → 自动取消并回补库存
@@ -313,6 +314,7 @@ public class VoucherOrderServiceImpl implements VoucherOrderService {
         order.setPayValue(1000L);
         order.setActualValue(5000L);
         order.setStatus(1);
+        order.setActiveFlag(1);
         voucherOrderMapper.insert(order);
 
         log.info("同步版下单成功 userId={} voucherId={} orderId={}", userId, voucherId, orderId);

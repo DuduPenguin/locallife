@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Update;
 public interface VoucherOrderMapper extends BaseMapper<VoucherOrder> {
 
     /** 按用户 + 券查订单数（一人一单的第一层判断，最终靠唯一索引兜底）。 */
-    @Select("SELECT COUNT(*) FROM tb_voucher_order WHERE user_id = #{userId} AND voucher_id = #{voucherId}")
+    @Select("SELECT COUNT(*) FROM tb_voucher_order WHERE user_id = #{userId} AND voucher_id = #{voucherId} AND active_flag = 1")
     int countByUserAndVoucher(@Param("userId") Long userId, @Param("voucherId") Long voucherId);
 
     /**
@@ -20,7 +20,8 @@ public interface VoucherOrderMapper extends BaseMapper<VoucherOrder> {
      *
      * <p>用 UPDATE 带状态条件，天然幂等 —— 重复调用第二次返回 0 行。
      */
-    @Update("UPDATE tb_voucher_order SET status = 4 WHERE id = #{orderId} AND status = 1")
+    @Update("UPDATE tb_voucher_order SET status = 4, active_flag = NULL " +
+            "WHERE id = #{orderId} AND status = 1")
     int cancelIfPending(@Param("orderId") Long orderId);
 
     /**

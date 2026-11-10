@@ -24,6 +24,8 @@ public class VoucherOrder implements Serializable {
 
     /** 1 待支付 2 已支付 3 已核销 4 已取消 5 退款中 6 已退款 */
     private Integer status;
+    /** 有效标记：1 有效，null 已取消（唯一索引对 NULL 不去重，所以取消后能重新下单） */
+    private Integer activeFlag;
 
     private LocalDateTime createTime;
     private LocalDateTime payTime;
