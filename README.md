@@ -4,6 +4,24 @@
 
 > 这是一个"为了讲清楚"而写的项目：每个模块都追求**能跑通 + 能压测 + 能解释取舍**，而不是堆功能。
 
+## 核心数据（200 并发抢 100 库存）
+
+| 方案 | 下单成功 | DB 库存 | 超卖 | P95 | QPS |
+|---|---|---|---|---|---|
+| 同步落库（查库存→扣减→落库） | 109 | **-9** | **9 件** | 1271 ms | 151 |
+| **Lua 预扣 + MQ 异步** | **100** | **0** | **0 件** | **227 ms** | **840** |
+
+数据可复现，方法见 [`docs/architecture.md`](docs/architecture.md) 第 5 节和 [`script/`](script/)。
+
+## 这个项目解决什么问题
+
+| 问题 | 手段 |
+|---|---|
+| 热点数据打穿数据库 | 泛型缓存组件：空值防穿透 / 互斥锁 / 逻辑过期 / 随机 TTL 防雪崩 |
+| 秒杀超卖 | Lua 原子预扣 + DB 条件更新 + 唯一索引，三层兜底 |
+| 瞬时洪峰 | RabbitMQ 异步落库 + 手动 ACK + 死信 |
+| 多人多实例登录 | Redis Hash 登录态 + 双层拦截器 + 阈值滑动续期 |
+
 ## 技术栈
 
 | 组件 | 版本 |
@@ -97,29 +115,63 @@ java script/SeckillBench.java 200 lua    # 零超卖
 ## 目录结构
 
 ```
-src/main/java/com/gao/locallife
-├── LocallifeApplication.java
-├── common/          统一返回、异常、ThreadLocal、Key 常量
-├── config/          MyBatis-Plus 等配置
-├── controller/      HTTP 入口
-├── dto / vo / entity
-├── mapper           数据访问
-├── service/impl     业务
-├── interceptor      登录拦截器（M2）
-├── cache            缓存组件（M3）
-├── mq               消息生产/消费（M4）
-├── id               订单号生成（M5）
-└── task             定时对账（M5）
+├── pom.xml
+├── docker-compose.yml          可选：一键起 MySQL / Redis / RabbitMQ
+├── sql/
+│   ├── init.sql                9 张表 + 初始数据
+│   └── verify.sql              建表结果校验
+├── script/
+│   ├── prepare_tokens.ps1      压测前准备 300 个虚拟用户登录态
+│   ├── SeckillBench.java       压测器（JDK 单文件运行，无需依赖）
+│   └── README.md
+├── http/
+│   ├── user.http               登录相关请求（IDEA HTTP Client 可直接点）
+│   ├── shop.http               缓存验证
+│   └── seckill.http            秒杀两版对比
+├── docs/
+│   └── architecture.md         架构图、表设计、6 个技术决策、压测方法、未实现清单
+└── src/main/java/com/gao/locallife
+    ├── LocallifeApplication.java
+    ├── common/        统一返回、业务异常、ThreadLocal、Redis key 常量
+    ├── config/        MyBatis-Plus 分页、拦截器注册、RabbitMQ 拓扑
+    ├── controller/    HTTP 入口
+    ├── dto / entity   传输对象与实体
+    ├── mapper         数据访问（BaseMapper + 注解 SQL）
+    ├── service/impl   业务实现
+    ├── interceptor    双层登录拦截器
+    ├── cache          缓存组件 CacheClient（穿透 / 互斥锁 / 逻辑过期）
+    ├── mq             秒杀消息生产与消费（手动 ACK + 死信）
+    ├── id             订单号生成器
+    └── task           缓存预热、库存预热
 ```
+
+## 接口一览
+
+| 方法 | 路径 | 说明 | 需要登录 |
+|---|---|---|---|
+| POST | `/user/code?phone=` | 发验证码（开发期直接返回） | ❌ |
+| POST | `/user/login` | 登录换 token | ❌ |
+| POST | `/user/logout` | 登出 | ✅ |
+| GET | `/user/me` | 当前用户 | ✅ |
+| GET | `/shop/{id}` | 商户详情（空值防穿透） | ❌ |
+| GET | `/shop/logical/{id}` | 商户详情（逻辑过期） | ❌ |
+| GET | `/shop-type/list` | 分类列表 | ❌ |
+| GET | `/shop/of/type?typeId=&current=` | 分类分页 | ❌ |
+| POST | `/voucher-order/seckill/{id}` | 秒杀下单（Lua + MQ） | ✅ |
+| POST | `/voucher-order/seckill-sync/{id}` | 秒杀下单（同步版，仅压测对比） | ✅ |
+| GET | `/health` | MySQL / Redis 连通性 | ❌ |
 
 ## 约定
 
-- Redis key 全部集中在 `common/RedisConstants`，不散落在业务代码里
-- 表名统一 `tb_` 前缀，靠 `mybatis-plus.global-config.db-config.table-prefix` 自动拼，实体类不写 `@TableName`
-- 接口统一返回 `Result<T>`，异常统一走 `GlobalExceptionHandler`
+- Redis key 全部集中在 `common/RedisConstants`，业务代码里不出现硬编码 key
+- 秒杀相关 key 带 `{}` hash tag（`seckill:stock:{2}`），保证集群同槽
+- 表名统一 `tb_` 前缀，靠 `mybatis-plus...table-prefix` 自动拼，实体类不写 `@TableName`
+- 接口统一返回 `Result<T>`，异常集中由 `GlobalExceptionHandler` 处理
+- **凭据不写死**：`application.yml` 用 `${MYSQL_PASSWORD:123456}` 这种"环境变量优先 + 本地默认值"的写法，
+  本地直接能跑，部署时用环境变量覆盖
 
 ## 参考与说明
 
-本项目参考了公开教程的**架构思路**（表结构、模块划分），业务代码为自行实现。
-未实现部分会在对应模块的 README 段落中标注。
+本项目参考了公开教程的**架构思路**（表结构、模块划分），业务代码、压测脚本与调优过程为自行实现。
+未实现的部分在 [`docs/architecture.md`](docs/architecture.md) 第 6 节明确列出，代码里对应位置也留了 TODO。
 
