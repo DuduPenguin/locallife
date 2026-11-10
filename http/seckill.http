@@ -1,16 +1,21 @@
-### M4-A 秒杀（同步版，故意会超卖）
-### 需要先登录拿 token
+### M4 秒杀：同步版（会超卖） vs Lua+MQ 版（不会超卖）
+###
+### 压测前一定要先重置数据 + 重启应用（重启会重新预热库存）
+###   1) SQL: UPDATE tb_seckill_voucher SET stock=100 WHERE voucher_id=2;
+###           DELETE FROM tb_voucher_order WHERE voucher_id=2;
+###   2) docker exec -it redis-vector redis-cli -n 1 del "seckill:stock:{2}" "seckill:order:{2}"
+###   3) 重启应用（StockPreheatRunner 会重新写库存）
 
 @host = http://localhost:8080
 
-### 1. 同步版下单（单次请求应该成功）
+### 1. 【旧方案】同步版下单（压测用这个会超卖）
 POST {{host}}/voucher-order/seckill-sync/2
-authorization: fc1aba1aebd043a9bf6f67805cf5252d
+authorization: 你的token
 
-### 2. 再点一次（应该返回「每人限购一单」）
-POST {{host}}/voucher-order/seckill-sync/2
-authorization: 粘你的token
+### 2. 【新方案】Lua + MQ 下单（压测用这个不超卖）
+POST {{host}}/voucher-order/seckill/2
+authorization: 你的token
 
-### 3. 看库存和订单数（用 SQL，不在这个文件里）
-###    SELECT stock FROM tb_seckill_voucher WHERE voucher_id = 2;
-###    SELECT COUNT(*) FROM tb_voucher_order WHERE voucher_id = 2;
+### 3. 单次验证：连点两次第 2 个请求，第二次应该返回「每人限购一单」
+POST {{host}}/voucher-order/seckill/2
+authorization: 你的token

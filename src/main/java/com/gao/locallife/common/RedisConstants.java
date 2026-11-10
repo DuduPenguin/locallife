@@ -38,6 +38,8 @@ public final class RedisConstants {
     public static final String SECKILL_STOCK_KEY = "seckill:stock:";
     /** 已购集合：seckill:order:{voucherId}，Set，member = userId */
     public static final String SECKILL_ORDER_KEY = "seckill:order:";
+    /** 活动时间窗：seckill:time:{voucherId}，value = "beginEpoch:endEpoch" */
+    public static final String SECKILL_TIME_KEY = "seckill:time:";
 
     /* ============ 订单（M5） ============ */
     /** 用户下单锁：lock:order:{userId} */
