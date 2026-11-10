@@ -1,36 +1,47 @@
 ### M5 订单生命周期：支付 / 取消 / 对账
 ###
+### 用法：
+###   1) 先跑「1. 秒杀下单」，把返回的 orderId 填到下面的 @orderId
+###   2) 后面所有请求都会自动带上这个 id
+###
 ### ⚠️ /voucher-order/** 不在白名单，所有请求都要带 authorization
+### ⚠️ 占位符不要留中文，路径参数必须是数字，否则 Tomcat 直接返回 400 HTML
 
 @host = http://localhost:8080
+@token = 你的token
+@orderId = 粘贴订单号
 
-### 1. 秒杀下单，记下返回的 orderId
+### 1. 秒杀下单（成功后把 data 里的数字填到上面 @orderId）
 POST {{host}}/voucher-order/seckill/2
-authorization: 你的token
+authorization: {{token}}
 
 ### 2. 查询对账（应该 allOk = true）
 GET {{host}}/voucher-order/reconcile
-authorization: 你的token
+authorization: {{token}}
 
-### 3. 模拟支付（把上一步的 orderId 填进来）
-POST {{host}}/voucher-order/pay/把orderId填这里
-authorization: 你的token
+### 3. 模拟支付
+POST {{host}}/voucher-order/pay/{{orderId}}
+authorization: {{token}}
 
 ### 4. 再支付一次（幂等：返回 data=false，不报错）
-POST {{host}}/voucher-order/pay/把orderId填这里
-authorization: 你的token
+POST {{host}}/voucher-order/pay/{{orderId}}
+authorization: {{token}}
 
-### 5. 取消订单（换成一张新的待支付订单的 orderId）
+### 5. 取消订单（换一张新的待支付订单的 id）
 ###    期望：DB 库存 +1、Redis 库存 +1、已购集合移除该用户
-POST {{host}}/voucher-order/cancel/把orderId填这里
-authorization: 你的token
+POST {{host}}/voucher-order/cancel/{{orderId}}
+authorization: {{token}}
 
 ### 6. 取消后再对账（仍应 allOk = true）
 GET {{host}}/voucher-order/reconcile
-authorization: 你的token
+authorization: {{token}}
 
 ### ---------------------------------------------------------------
-### 超时取消怎么验证（30 分钟太久，用下面这条临时改成 30 秒）：
+### 订单号忘了保存？从数据库查：
+###   SELECT id, user_id, voucher_id, status, create_time
+###   FROM tb_voucher_order ORDER BY create_time DESC LIMIT 5;
+###
+### 超时取消怎么验证（30 分钟太久，临时改 30 秒）：
 ###   1) config/OrderDelayConfig.java 里 ORDER_TIMEOUT_MILLIS 改成 30 * 1000
 ###   2) 重启 → 下单 → 等 30 秒
 ###   3) 日志出现「订单已取消」，库存和已购集合自动回补
