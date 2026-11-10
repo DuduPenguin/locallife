@@ -35,19 +35,24 @@ public class ShopGeoPreheatRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
         List<Shop> shops = shopMapper.selectList(null);
-        int count = 0;
+        int written = 0;
+        int updated = 0;
         for (Shop shop : shops) {
             if (shop.getX() == null || shop.getY() == null || shop.getTypeId() == null) {
                 continue;
             }
             String key = RedisConstants.SHOP_GEO_KEY + shop.getTypeId();
             // add(key, Point(经度, 纬度), member)
+            // 注意：GEOADD 对已存在的 member 返回 0，但它仍然会覆盖坐标。
+            // 所以不能用返回值统计"写入数"，否则重启时日志永远是 0，看着像失败。
             Long added = stringRedisTemplate.opsForGeo()
                     .add(key, new Point(shop.getX(), shop.getY()), String.valueOf(shop.getId()));
             if (added != null && added > 0) {
-                count++;
+                written++;
+            } else {
+                updated++;
             }
         }
-        log.info("商户 GEO 预热完成，写入 {} 个坐标点", count);
+        log.info("商户 GEO 预热完成：新增 {} 个，更新 {} 个（合计 {}）", written, updated, written + updated);
     }
 }
