@@ -184,8 +184,6 @@ java script/SeckillBench.java 200 lua    # Lua + MQ 版
 | 库存分桶 | 未实现 | 十万级 QPS 下单个库存 key 会成热点 |
 | 限流熔断 | 未实现 | 计划 Sentinel + 线程池隔离 |
 | 对账自动修复 | 未实现 | 目前只检测和告警，修复靠人工/重放死信 |
-| GEO 附近商户 | 表与 key 已设计 | `shop:geo:{typeId}` |
-| 社交模块（点赞/关注/Feed/签到） | 表与 key 已设计 | ZSet / Set / Bitmap |
 | 监控告警 | 未实现 | 计划 Micrometer + 慢查询/堆积告警 |
 
 ## 8. 参考说明
