@@ -12,7 +12,7 @@ Content-Type: application/json
 
 {
   "phone": "13800000001",
-  "code": "622280"
+  "code": "123456"
 }
 
 ### 3. 当前用户（先登录，把 token 粘到下面）

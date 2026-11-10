@@ -44,4 +44,18 @@ public class ShopController {
                                     @RequestParam(value = "current", defaultValue = "1") Integer current) {
         return Result.ok(shopService.queryByType(typeId, current));
     }
+
+    /**
+     * 附近商户（Redis GEO，按距离升序）。
+     *
+     * <p>例：/shop/nearby?typeId=1&x=126.632&y=45.741&current=1&radius=5000
+     */
+    @GetMapping("/shop/nearby")
+    public Result<List<Shop>> nearby(@RequestParam("typeId") Long typeId,
+                                    @RequestParam("x") Double x,
+                                    @RequestParam("y") Double y,
+                                    @RequestParam(value = "current", defaultValue = "1") Integer current,
+                                    @RequestParam(value = "radius", defaultValue = "5000") Integer radius) {
+        return Result.ok(shopService.queryNearby(typeId, x, y, current, radius));
+    }
 }

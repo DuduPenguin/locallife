@@ -3,14 +3,23 @@ package com.gao.locallife.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gao.locallife.cache.CacheClient;
+import com.gao.locallife.common.RedisConstants;
 import com.gao.locallife.entity.Shop;
 import com.gao.locallife.entity.ShopType;
 import com.gao.locallife.mapper.ShopMapper;
 import com.gao.locallife.mapper.ShopTypeMapper;
 import com.gao.locallife.service.ShopService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.geo.Circle;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.GeoResult;
+import org.springframework.data.geo.GeoResults;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -20,7 +29,7 @@ import static com.gao.locallife.common.RedisConstants.CACHE_SHOP_KEY;
 import static com.gao.locallife.common.RedisConstants.CACHE_SHOP_TTL;
 import static com.gao.locallife.common.RedisConstants.LOCK_SHOP_KEY;
 
-/** 商户查询：普通数据走空值防穿透，热数据走逻辑过期。 */
+/** 商户查询：普通数据走空值防穿透，热数据走逻辑过期；附近商户走 GEO。 */
 @Service
 @RequiredArgsConstructor
 public class ShopServiceImpl implements ShopService {
@@ -28,6 +37,7 @@ public class ShopServiceImpl implements ShopService {
     private final ShopMapper shopMapper;
     private final ShopTypeMapper shopTypeMapper;
     private final CacheClient cacheClient;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public Shop queryById(Long id) {
@@ -75,5 +85,50 @@ public class ShopServiceImpl implements ShopService {
                         CACHE_SHOP_KEY + "logical:" + id, shop, 10L, TimeUnit.SECONDS);
             }
         }
+    }
+
+    /**
+     * 附近商户：GEO 底层是 ZSet + GeoHash，score 是 52 位整数，
+     * 所以"空间相邻"变成"数值相邻"，排序即按距离。
+     */
+    @Override
+    public List<Shop> queryNearby(Long typeId, Double x, Double y, Integer current, Integer radius) {
+        String key = RedisConstants.SHOP_GEO_KEY + typeId;
+        int page = current == null ? 1 : current;
+        int size = 5;
+        int limit = page * size;              // GEOSEARCH 没有 offset，只能多取再截断
+
+        GeoResults<RedisGeoCommands.GeoLocation<String>> results =
+                stringRedisTemplate.opsForGeo().radius(
+                        key,
+                        new Circle(new Point(x, y), new Distance(radius == null ? 5000 : radius, RedisGeoCommands.DistanceUnit.METERS)),
+                        RedisGeoCommands.GeoRadiusCommandArgs.newGeoRadiusArgs()
+                                .includeDistance()
+                                .sortAscending()
+                                .limit(limit));
+
+        List<Long> ids = new ArrayList<>();
+        if (results != null) {
+            for (GeoResult<RedisGeoCommands.GeoLocation<String>> r : results.getContent()) {
+                ids.add(Long.valueOf(r.getContent().getName()));
+            }
+        }
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        // 截掉前面 (page-1)*size 条，实现翻页
+        int from = (page - 1) * size;
+        if (from >= ids.size()) {
+            return List.of();
+        }
+        List<Long> pageIds = ids.subList(from, Math.min(from + size, ids.size()));
+
+        List<Shop> shops = shopMapper.selectBatchIds(pageIds);
+        // selectBatchIds 不保证顺序，按距离顺序重排
+        List<Shop> ordered = new ArrayList<>();
+        for (Long id : pageIds) {
+            shops.stream().filter(s -> s.getId().equals(id)).findFirst().ifPresent(ordered::add);
+        }
+        return ordered;
     }
 }

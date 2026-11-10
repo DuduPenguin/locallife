@@ -1,0 +1,84 @@
+### M6 社交 + M7 地理（全部需要登录，先填 token）
+
+@host = http://localhost:8080
+@token = 你的token
+@blogId = 1
+
+### ============ M7 地理 GEO ============
+
+### 1. 附近商户（哈工大坐标，5 公里内，按距离升序）
+GET {{host}}/shop/nearby?typeId=1&x=126.632&y=45.741&current=1&radius=5000
+
+### 2. 上一页翻页（current=2）
+GET {{host}}/shop/nearby?typeId=1&x=126.632&y=45.741&current=2
+
+### 3. 缩小半径到 1 公里，应该只剩最近的一两家
+GET {{host}}/shop/nearby?typeId=1&x=126.632&y=45.741&radius=1000
+
+### ============ M6 点赞 ZSet ============
+
+### 4. 点赞（返回 true）
+POST {{host}}/blog-like/{{blogId}}
+authorization: {{token}}
+
+### 5. 再点一次（取消点赞，返回 false）
+POST {{host}}/blog-like/{{blogId}}
+authorization: {{token}}
+
+### 6. 点赞排行（按点赞时间倒序，返回 userId 列表）
+GET {{host}}/blog-like/{{blogId}}/top
+authorization: {{token}}
+
+### ============ M6 关注 Set ============
+
+### 7. 关注用户 2
+POST {{host}}/follow/2
+authorization: {{token}}
+
+### 8. 是否已关注（true）
+GET {{host}}/follow/or/not/2
+authorization: {{token}}
+
+### 9. 共同关注（需要两个用户都关注了同一批人，先各关注几个人再测）
+GET {{host}}/follow/common/2
+authorization: {{token}}
+
+### 10. 取关
+DELETE {{host}}/follow/2
+authorization: {{token}}
+
+### ============ M6 Feed 推模式 ZSet ============
+
+### 11. 发一条笔记（会推送给你的所有粉丝）
+POST {{host}}/blog
+Content-Type: application/json
+authorization: {{token}}
+
+{
+  "shopId": 1,
+  "title": "测试笔记",
+  "content": "这条会用推模式推到粉丝的 feed 里",
+  "images": ""
+}
+
+### 12. 我的 Feed（首次不带参数）
+GET {{host}}/feed
+authorization: {{token}}
+
+### 13. 翻下一页：把上一步返回的 minTime 和 offset 填进来
+GET {{host}}/feed?lastTime=把minTime填这里&offset=把offset填这里
+authorization: {{token}}
+
+### ============ M6 签到 Bitmap ============
+
+### 14. 今日签到（第一次 true，第二次 false）
+POST {{host}}/sign
+authorization: {{token}}
+
+### 15. 本月签到天数
+GET {{host}}/sign/count
+authorization: {{token}}
+
+### 16. 连续签到天数
+GET {{host}}/sign/continuous
+authorization: {{token}}

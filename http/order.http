@@ -13,28 +13,28 @@
 
 ### 1. 秒杀下单（成功后把 data 里的数字填到上面 @orderId）
 POST {{host}}/voucher-order/seckill/2
-authorization: b9e599aa88454dcb98e8201543ab2f02
+authorization: {{token}}
 
 ### 2. 查询对账（应该 allOk = true）
 GET {{host}}/voucher-order/reconcile
-authorization: b9e599aa88454dcb98e8201543ab2f02
+authorization: {{token}}
 
 ### 3. 模拟支付
-POST {{host}}/voucher-order/pay/251846161999069496
-authorization: b9e599aa88454dcb98e8201543ab2f02
+POST {{host}}/voucher-order/pay/{{orderId}}
+authorization: {{token}}
 
 ### 4. 再支付一次（幂等：返回 data=false，不报错）
-POST {{host}}/voucher-order/pay/251846161999069496
-authorization: b9e599aa88454dcb98e8201543ab2f02
+POST {{host}}/voucher-order/pay/{{orderId}}
+authorization: {{token}}
 
 ### 5. 取消订单（换一张新的待支付订单的 id）
 ###    期望：DB 库存 +1、Redis 库存 +1、已购集合移除该用户
-POST {{host}}/voucher-order/cancel/251846161999069496
-authorization: b9e599aa88454dcb98e8201543ab2f02
+POST {{host}}/voucher-order/cancel/{{orderId}}
+authorization: {{token}}
 
 ### 6. 取消后再对账（仍应 allOk = true）
 GET {{host}}/voucher-order/reconcile
-authorization: b9e599aa88454dcb98e8201543ab2f02
+authorization: {{token}}
 
 ### ---------------------------------------------------------------
 ### 订单号忘了保存？从数据库查：
