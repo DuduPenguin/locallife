@@ -28,4 +28,7 @@ public interface BlogService {
      * @param offset   同一时间戳已消费的条数，首次传 0
      */
     FeedResult feed(Long lastTime, Integer offset);
+
+    /** 某个商户下的笔记（普通 DB 分页，和 Feed 的游标分页对比用）。 */
+    List<Blog> byShop(Long shopId, Integer current);
 }

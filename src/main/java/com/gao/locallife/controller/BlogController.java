@@ -4,7 +4,6 @@ import com.gao.locallife.common.Result;
 import com.gao.locallife.dto.FeedResult;
 import com.gao.locallife.entity.Blog;
 import com.gao.locallife.service.BlogService;
-import com.gao.locallife.service.impl.BlogServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +20,6 @@ import java.util.List;
 public class BlogController {
 
     private final BlogService blogService;
-    private final BlogServiceImpl blogServiceImpl;
 
     /** 发布笔记（会推送到所有粉丝的 Feed）。 */
     @PostMapping("/blog")
@@ -58,6 +56,6 @@ public class BlogController {
     @GetMapping("/blog/of/shop/{shopId}")
     public Result<List<Blog>> byShop(@PathVariable("shopId") Long shopId,
                                      @RequestParam(value = "current", defaultValue = "1") Integer current) {
-        return Result.ok(blogServiceImpl.byShop(shopId, current));
+        return Result.ok(blogService.byShop(shopId, current));
     }
 }

@@ -156,7 +156,7 @@ public class BlogServiceImpl implements BlogService {
         return new FeedResult(ordered, minTime, sameScoreCount);
     }
 
-    /** 分页查某个商户的笔记（普通 DB 分页，和 Feed 的差别正好对比讲）。 */
+    @Override
     public List<Blog> byShop(Long shopId, Integer current) {
         Page<Blog> page = blogMapper.selectPage(
                 new Page<>(current == null ? 1 : current, 5),
