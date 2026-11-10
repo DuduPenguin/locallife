@@ -153,20 +153,36 @@ def jitter(anchor):
     return round(dx + random.uniform(-0.0012, 0.0012), 6), round(dy + random.uniform(-0.0012, 0.0012), 6)
 
 
+def pick_hours(name, tid, tagline):
+    """营业时间要和店名/品类自洽，否则知识库里会出现
+    「西餐厅 16:00 开门」「包子铺凌晨 2 点关门」这种一眼假的数据。"""
+    if tid != 1:
+        return random.choice(TYPE_HOURS[tid])
+
+    # 早餐/午后型
+    if any(k in name for k in ("包子", "早点", "砂锅居", "春饼小吃", "烤饼")):
+        return random.choice(["06:30-14:00", "07:00-15:00"])
+    # 夜宵型
+    if any(k in name for k in ("烧烤", "烤羊", "羊排", "铁锅炖", "烤肉", "火锅", "涮")):
+        return random.choice(["11:00-23:00", "16:00-次日02:00", "11:00-次日01:00"])
+    # 全天正餐
+    if any(k in name for k in ("西餐厅", "西餐", "波特曼", "马迭尔", "华梅", "塔道斯")):
+        return random.choice(["10:30-22:00", "11:00-22:30"])
+    if any(k in name for k in ("日料", "HANARI", "朝鲜", "韩")):
+        return random.choice(["11:00-22:00", "11:30-22:30"])
+    if any(k in name for k in ("咖啡",)):
+        return "08:00-20:00"
+    # 其它正餐
+    return random.choice(["10:00-22:00", "10:30-22:30", "11:00-23:00"])
+
+
 def gen_shops(start_id=11):
     shops = []
     for i, (name, area, address, anchor, tid, tagline) in enumerate(REAL_SHOPS):
         x, y = jitter(anchor)
         score = int(random.gauss(44, 3))
         score = max(35, min(50, score))
-        # 营业时间要和「特色」描述自洽，否则知识库里会出现
-        # “08:00 开门”和“开到凌晨”并存的矛盾，RAG 会答错
-        hours = random.choice(TYPE_HOURS[tid])
-        if tid == 1:
-            if "凌晨" in tagline or "夜宵" in tagline:
-                hours = "16:00-次日02:00"
-            elif "早点" in tagline or "上午" in tagline:
-                hours = "06:30-14:00"
+        hours = pick_hours(name, tid, tagline)
 
         shops.append(dict(
             id=start_id + i, name=name, type_id=tid, type_name=TYPE_NAME[tid],
