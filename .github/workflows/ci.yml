@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # 单测都不依赖 MySQL / Redis（用 Mockito 模拟），所以 CI 里不需要起中间件
+      - name: Run tests
+        run: mvn -B test
+
+      - name: Package
+        run: mvn -B -DskipTests package

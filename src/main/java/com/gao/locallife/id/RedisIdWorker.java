@@ -32,9 +32,11 @@ public class RedisIdWorker {
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     public long nextId(String keyPrefix) {
-        // 1. 时间戳部分
-        long now = LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC)
-                + java.time.LocalTime.now().toSecondOfDay();
+        // 1. 时间戳部分：直接用 epoch 秒，不掺时区
+        //    之前是 LocalDate.now().atStartOfDay().toEpochSecond(UTC) + LocalTime.now()，
+        //    日期按本地算、秒数按本地算、但 epoch 按 UTC 算，结果整体偏了 8 小时（东八区），
+        //    换机器/换时区时高位还会倒退，破坏单调性。这里改成与机器时区无关的写法。
+        long now = System.currentTimeMillis() / 1000;
         long timestamp = now - ORDER_ID_BEGIN_TIMESTAMP;
 
         // 2. 序列号部分：按天分 key，便于清零和统计日订单量

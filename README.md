@@ -1,5 +1,7 @@
 # LocalLife
 
+[![CI](https://github.com/DuduPenguin/locallife/actions/workflows/ci.yml/badge.svg)](https://github.com/DuduPenguin/locallife/actions/workflows/ci.yml)
+
 本地生活平台后端：**登录鉴权 / 缓存治理 / 秒杀链路 / 订单防重**。
 
 > 这是一个"为了讲清楚"而写的项目
