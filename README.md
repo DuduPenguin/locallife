@@ -160,6 +160,12 @@ locallife
     └── task/          缓存预热、GEO 预热、库存预热、定时对账
 ```
 
+## 同一库里的另一张表
+
+`kb_chunk` 是 **locallife-agent** 项目的表（知识库分块 + ngram 全文索引，给关键词召回用），
+建在同一个 `locallife` 库、方便两个项目共用一份数据。
+它不属于本项目，`init.sql` 里没有它，建表语句在 agent 仓库的 `sql/agent_schema.sql`。
+
 ## 约定
 
 - Redis key 全部集中在 `common/RedisConstants`，不散落在业务代码里
